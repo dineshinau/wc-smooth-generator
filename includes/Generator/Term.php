@@ -43,11 +43,13 @@ class Term extends Generator {
 		} elseif ( $taxonomy_obj->hierarchical ) {
 			$term_name = ucwords( self::$faker->department( 3 ) );
 		} else {
-			$term_name = self::random_weighted_element( array(
-				self::$faker->lastName()       => 45,
-				self::$faker->colorName()      => 35,
-				self::$faker->words( 3, true ) => 20,
-			) );
+			$term_name = self::random_weighted_element(
+				array(
+					self::$faker->lastName()       => 45,
+					self::$faker->colorName()      => 35,
+					self::$faker->words( 3, true ) => 20,
+				)
+			);
 			$term_name = strtolower( $term_name );
 		}
 

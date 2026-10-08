@@ -378,15 +378,15 @@ class OrderAttribution {
 	 */
 	private static function get_seasonal_campaign_data() {
 		$campaigns = array(
-			'summer_sale'  => array(
+			'summer_sale'     => array(
 				'content' => 'summer_deals',
 				'term'    => 'seasonal_discount',
 			),
-			'black_friday' => array(
+			'black_friday'    => array(
 				'content' => 'bf_deals',
 				'term'    => 'black_friday_sale',
 			),
-			'holiday_special'   => array(
+			'holiday_special' => array(
 				'content' => 'holiday_deals',
 				'term'    => 'christmas_sale',
 			),
@@ -486,5 +486,4 @@ class OrderAttribution {
 			'_wc_order_attribution_utm_term'     => $campaign['term'],
 		);
 	}
-
 }

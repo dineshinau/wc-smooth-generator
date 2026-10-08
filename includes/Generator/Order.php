@@ -36,10 +36,10 @@ class Order extends Generator {
 	/**
 	 * Refund type constants for memory-efficient batch operations.
 	 */
-	const REFUND_TYPE_NONE = 0;
-	const REFUND_TYPE_FULL = 1;
+	const REFUND_TYPE_NONE    = 0;
+	const REFUND_TYPE_FULL    = 1;
 	const REFUND_TYPE_PARTIAL = 2;
-	const REFUND_TYPE_MULTI = 3;
+	const REFUND_TYPE_MULTI   = 3;
 
 	/**
 	 * Refund distribution ratios for batch generation with exact ratios.
@@ -48,7 +48,7 @@ class Order extends Generator {
 	 * - 25% will be single partial refunds
 	 * - 25% will be multi-partial refunds (two partial refunds)
 	 */
-	const REFUND_DISTRIBUTION_FULL_RATIO = 0.5;
+	const REFUND_DISTRIBUTION_FULL_RATIO    = 0.5;
 	const REFUND_DISTRIBUTION_PARTIAL_RATIO = 0.25;
 
 	/**
@@ -111,13 +111,13 @@ class Order extends Generator {
 			$country_code = $order->get_shipping_country();
 
 			$calculate_tax_for = array(
-				'country' => $country_code,
-				'state' => '',
+				'country'  => $country_code,
+				'state'    => '',
 				'postcode' => '',
-				'city' => '',
+				'city'     => '',
 			);
 
-			$fee = new \WC_Order_Item_Fee();
+			$fee          = new \WC_Order_Item_Fee();
 			$randomAmount = self::$faker->randomFloat( 2, 0.05, 100 );
 
 			$fee->set_name( 'Extra Fee' );
@@ -266,8 +266,8 @@ class Order extends Generator {
 	/**
 	 * Create multiple orders.
 	 *
-	 * @param int    $amount   The number of orders to create.
-	 * @param array  $args     Additional args for order creation.
+	 * @param int   $amount   The number of orders to create.
+	 * @param array $args     Additional args for order creation.
 	 *
 	 * @return int[]|\WP_Error
 	 */
@@ -282,15 +282,15 @@ class Order extends Generator {
 		// Using "selection without replacement" algorithm for exact counts
 		$coupons_remaining = 0;
 		if ( isset( $args['coupon-ratio'] ) ) {
-			$coupon_ratio = floatval( $args['coupon-ratio'] );
-			$coupon_ratio = max( 0.0, min( 1.0, $coupon_ratio ) );
+			$coupon_ratio      = floatval( $args['coupon-ratio'] );
+			$coupon_ratio      = max( 0.0, min( 1.0, $coupon_ratio ) );
 			$coupons_remaining = (int) round( $amount * $coupon_ratio );
 		}
 
 		// Initialize refund type counters for weighted selection without replacement
-		$full_remaining = 0;
+		$full_remaining    = 0;
 		$partial_remaining = 0;
-		$multi_remaining = 0;
+		$multi_remaining   = 0;
 		if ( isset( $args['refund-ratio'] ) && 'completed' === ( $args['status'] ?? '' ) ) {
 			$refund_ratio = floatval( $args['refund-ratio'] );
 			$refund_ratio = max( 0.0, min( 1.0, $refund_ratio ) );
@@ -298,9 +298,9 @@ class Order extends Generator {
 			$total_refunds = (int) round( $amount * $refund_ratio );
 
 			// Split using floor to avoid over-allocation, remainder goes to multi
-			$full_remaining = (int) floor( $total_refunds * self::REFUND_DISTRIBUTION_FULL_RATIO );
+			$full_remaining    = (int) floor( $total_refunds * self::REFUND_DISTRIBUTION_FULL_RATIO );
 			$partial_remaining = (int) floor( $total_refunds * self::REFUND_DISTRIBUTION_PARTIAL_RATIO );
-			$multi_remaining = $total_refunds - $full_remaining - $partial_remaining;
+			$multi_remaining   = $total_refunds - $full_remaining - $partial_remaining;
 		}
 
 		// Pre-generate dates if date-start is provided
@@ -310,10 +310,10 @@ class Order extends Generator {
 			$dates = self::generate_batch_dates( $amount, $args );
 		}
 
-		$order_ids = array();
+		$order_ids        = array();
 		$orders_remaining = $amount;
 
-		for ( $i = 1; $i <= $amount; $i ++ ) {
+		for ( $i = 1; $i <= $amount; $i++ ) {
 			// Use pre-generated date if available, otherwise pass null to generate one
 			$date = ( null !== $dates && ! empty( $dates ) ) ? array_shift( $dates ) : null;
 
@@ -324,7 +324,7 @@ class Order extends Generator {
 				// Guarantees exact count while maintaining random distribution
 				$include_coupon = ( wp_rand( 1, $orders_remaining ) <= $coupons_remaining );
 				if ( $include_coupon ) {
-					$coupons_remaining--;
+					--$coupons_remaining;
 				}
 			}
 
@@ -336,42 +336,42 @@ class Order extends Generator {
 				if ( $total_refund_remaining > 0 && wp_rand( 1, $orders_remaining ) <= $total_refund_remaining ) {
 					// This order gets a refund, decide which type using weighted selection
 					// Store thresholds before decrementing
-					$full_threshold = $full_remaining;
+					$full_threshold    = $full_remaining;
 					$partial_threshold = $full_remaining + $partial_remaining;
-					$rand = wp_rand( 1, $total_refund_remaining );
+					$rand              = wp_rand( 1, $total_refund_remaining );
 
 					if ( $rand <= $full_threshold ) {
 						$refund_type = self::REFUND_TYPE_FULL;
-						$full_remaining--;
+						--$full_remaining;
 					} elseif ( $rand <= $partial_threshold ) {
 						$refund_type = self::REFUND_TYPE_PARTIAL;
-						$partial_remaining--;
+						--$partial_remaining;
 					} else {
 						$refund_type = self::REFUND_TYPE_MULTI;
-						$multi_remaining--;
+						--$multi_remaining;
 					}
 				} else {
 					$refund_type = self::REFUND_TYPE_NONE;
 				}
 			}
 
-			$orders_remaining--;
+			--$orders_remaining;
 
 			$order = self::generate( true, $args, $date, $include_coupon, $refund_type );
 			if ( ! $order instanceof \WC_Order ) {
 				error_log( "Batch generation failed: Order {$i} of {$amount} could not be generated" );
 				// Restore counters since order generation failed
-				$orders_remaining++;
+				++$orders_remaining;
 				if ( $include_coupon && isset( $args['coupon-ratio'] ) ) {
-					$coupons_remaining++;
+					++$coupons_remaining;
 				}
 				if ( isset( $args['refund-ratio'] ) && 'completed' === ( $args['status'] ?? '' ) && null !== $refund_type ) {
 					if ( self::REFUND_TYPE_FULL === $refund_type ) {
-						$full_remaining++;
+						++$full_remaining;
 					} elseif ( self::REFUND_TYPE_PARTIAL === $refund_type ) {
-						$partial_remaining++;
+						++$partial_remaining;
 					} elseif ( self::REFUND_TYPE_MULTI === $refund_type ) {
-						$multi_remaining++;
+						++$multi_remaining;
 					}
 				}
 				continue;
@@ -456,12 +456,14 @@ class Order extends Generator {
 		if ( ! empty( $assoc_args['status'] ) ) {
 			return $assoc_args['status'];
 		} else {
-			return self::random_weighted_element( array(
-				'completed'  => 70,
-				'processing' => 15,
-				'on-hold'    => 5,
-				'failed'     => 10,
-			) );
+			return self::random_weighted_element(
+				array(
+					'completed'  => 70,
+					'processing' => 15,
+					'on-hold'    => 5,
+					'failed'     => 10,
+				)
+			);
 		}
 	}
 
@@ -496,11 +498,13 @@ class Order extends Generator {
 			$num_products_to_get = $num_existing_products;
 		}
 
-		$query = new \WC_Product_Query( array(
-			'limit'   => $num_products_to_get,
-			'return'  => 'ids',
-			'orderby' => 'rand',
-		) );
+		$query = new \WC_Product_Query(
+			array(
+				'limit'   => $num_products_to_get,
+				'return'  => 'ids',
+				'orderby' => 'rand',
+			)
+		);
 
 		$product_ids = $query->get_products();
 		if ( empty( $product_ids ) ) {
@@ -521,7 +525,7 @@ class Order extends Generator {
 				if ( empty( $available_variations ) ) {
 					continue;
 				}
-				$index      = self::$faker->numberBetween( 0, count( $available_variations ) - 1 );
+				$index     = self::$faker->numberBetween( 0, count( $available_variations ) - 1 );
 				$variation = new \WC_Product_Variation( $available_variations[ $index ]['variation_id'] );
 				if ( $variation && $variation->exists() ) {
 					$products[] = $variation;
@@ -551,23 +555,37 @@ class Order extends Generator {
 			}
 
 			// Create 3 fixed cart coupons ($5-$50)
-			$fixed_result = Coupon::batch( 3, array( 'min' => 5, 'max' => 50, 'discount_type' => 'fixed_cart' ) );
+			$fixed_result = Coupon::batch(
+				3,
+				array(
+					'min'           => 5,
+					'max'           => 50,
+					'discount_type' => 'fixed_cart',
+				)
+			);
 
 			// Create 3 percentage coupons (5%-25%)
-			$percent_result = Coupon::batch( 3, array( 'min' => 5, 'max' => 25, 'discount_type' => 'percent' ) );
+			$percent_result = Coupon::batch(
+				3,
+				array(
+					'min'           => 5,
+					'max'           => 25,
+					'discount_type' => 'percent',
+				)
+			);
 
-		// If coupon creation failed, return false
-		if ( is_wp_error( $fixed_result ) || is_wp_error( $percent_result ) ) {
-			$error_message = 'Coupon creation failed: ';
-			if ( is_wp_error( $fixed_result ) ) {
-				$error_message .= 'Fixed coupons error: ' . $fixed_result->get_error_message() . ' ';
+			// If coupon creation failed, return false
+			if ( is_wp_error( $fixed_result ) || is_wp_error( $percent_result ) ) {
+				$error_message = 'Coupon creation failed: ';
+				if ( is_wp_error( $fixed_result ) ) {
+					$error_message .= 'Fixed coupons error: ' . $fixed_result->get_error_message() . ' ';
+				}
+				if ( is_wp_error( $percent_result ) ) {
+					$error_message .= 'Percentage coupons error: ' . $percent_result->get_error_message();
+				}
+				error_log( $error_message );
+				return false;
 			}
-			if ( is_wp_error( $percent_result ) ) {
-				$error_message .= 'Percentage coupons error: ' . $percent_result->get_error_message();
-			}
-			error_log( $error_message );
-			return false;
-		}
 
 			// Now get a random coupon from the ones we just created
 			$coupon = Coupon::get_random();
@@ -579,15 +597,15 @@ class Order extends Generator {
 	/**
 	 * Create a refund for an order (either full or partial).
 	 *
-	 * @param \WC_Order      $order The order to refund.
-	 * @param bool           $force_partial Force partial refund only (legacy parameter).
+	 * @param \WC_Order             $order The order to refund.
+	 * @param bool                  $force_partial Force partial refund only (legacy parameter).
 	 * @param \WC_Order_Refund|null $previous_refund Previous refund to base date on (for second refunds).
-	 * @param bool|null      $force_full Explicitly force full refund (overrides random logic).
+	 * @param bool|null             $force_full Explicitly force full refund (overrides random logic).
 	 * @return \WC_Order_Refund|false Refund object on success, false on failure.
 	 */
 	protected static function create_refund( $order, $force_partial = false, $previous_refund = null, $force_full = null ) {
 		if ( ! $order instanceof \WC_Order ) {
-			error_log( "Error: Order is not an instance of \WC_Order: " . print_r( $order, true ) );
+			error_log( 'Error: Order is not an instance of \WC_Order: ' . print_r( $order, true ) );
 			return false;
 		}
 
@@ -595,7 +613,7 @@ class Order extends Generator {
 		$existing_refunds = $order->get_refunds();
 		if ( ! empty( $existing_refunds ) ) {
 			$force_partial = true;
-			$force_full = false; // Can't do full refund if already has refunds
+			$force_full    = false; // Can't do full refund if already has refunds
 		}
 
 		// Calculate already refunded quantities
@@ -617,19 +635,21 @@ class Order extends Generator {
 
 		// Ensure we have items to refund
 		if ( empty( $line_items ) ) {
-			error_log( sprintf(
-				'Refund skipped for order %d: No line items to refund. Order has %d items.',
-				$order->get_id(),
-				count( $order->get_items( array( 'line_item', 'fee' ) ) )
-			) );
+			error_log(
+				sprintf(
+					'Refund skipped for order %d: No line items to refund. Order has %d items.',
+					$order->get_id(),
+					count( $order->get_items( array( 'line_item', 'fee' ) ) )
+				)
+			);
 			return false;
 		}
 
 		// Calculate refund totals
-		$totals = self::calculate_refund_totals( $line_items );
+		$totals        = self::calculate_refund_totals( $line_items );
 		$refund_amount = $totals['amount'];
-		$total_items = $totals['total_items'];
-		$total_qty = $totals['total_qty'];
+		$total_items   = $totals['total_items'];
+		$total_qty     = $totals['total_qty'];
 
 		// For full refunds, use order's actual remaining total to avoid rounding discrepancies
 		if ( $is_full_refund ) {
@@ -643,10 +663,10 @@ class Order extends Generator {
 			// Remove items until refund is under threshold
 			while ( $refund_amount >= $max_partial_refund && count( $line_items ) > 1 ) {
 				unset( $line_items[ array_rand( $line_items ) ] );
-				$totals = self::calculate_refund_totals( $line_items );
+				$totals        = self::calculate_refund_totals( $line_items );
 				$refund_amount = $totals['amount'];
-				$total_items = $totals['total_items'];
-				$total_qty = $totals['total_qty'];
+				$total_items   = $totals['total_items'];
+				$total_qty     = $totals['total_qty'];
 			}
 		}
 
@@ -658,13 +678,15 @@ class Order extends Generator {
 
 		// Validate refund amount
 		if ( $refund_amount <= 0 ) {
-			error_log( sprintf(
-				'Refund skipped for order %d: Invalid refund amount (%s). Order total: %s, Already refunded: %s',
-				$order->get_id(),
-				$refund_amount,
-				$order->get_total(),
-				$order->get_total_refunded()
-			) );
+			error_log(
+				sprintf(
+					'Refund skipped for order %d: Invalid refund amount (%s). Order total: %s, Already refunded: %s',
+					$order->get_id(),
+					$refund_amount,
+					$order->get_total(),
+					$order->get_total_refunded()
+				)
+			);
 			return false;
 		}
 
@@ -694,16 +716,18 @@ class Order extends Generator {
 		);
 
 		if ( is_wp_error( $refund ) ) {
-			error_log( sprintf(
-				"Refund creation failed for order %d:\nError: %s\nCalculated Amount: %s\nOrder Total: %s\nOrder Refunded Total: %s\nReason: %s\nLine Items: %s",
-				$order->get_id(),
-				$refund->get_error_message(),
-				$refund_amount,
-				$order->get_total(),
-				$order->get_total_refunded(),
-				$reason,
-				print_r( $line_items, true )
-			) );
+			error_log(
+				sprintf(
+					"Refund creation failed for order %d:\nError: %s\nCalculated Amount: %s\nOrder Total: %s\nOrder Refunded Total: %s\nReason: %s\nLine Items: %s",
+					$order->get_id(),
+					$refund->get_error_message(),
+					$refund_amount,
+					$order->get_total(),
+					$order->get_total_refunded(),
+					$reason,
+					print_r( $line_items, true )
+				)
+			);
 			return false;
 		}
 
@@ -756,14 +780,14 @@ class Order extends Generator {
 		// Prorate tax based on refund quantity
 		if ( ! empty( $taxes['total'] ) && $original_qty > 0 ) {
 			foreach ( $taxes['total'] as $tax_id => $tax_amount ) {
-				$tax_per_unit = $tax_amount / $original_qty;
+				$tax_per_unit          = $tax_amount / $original_qty;
 				$refund_tax[ $tax_id ] = ( $tax_per_unit * $refund_qty ) * -1;
 			}
 		}
 
 		// Prorate the refund total based on refund quantity
 		$total_per_unit = $original_qty > 0 ? $item->get_total() / $original_qty : 0;
-		$refund_total = $total_per_unit * $refund_qty;
+		$refund_total   = $total_per_unit * $refund_qty;
 
 		return array(
 			'qty'          => $refund_qty,
@@ -783,8 +807,8 @@ class Order extends Generator {
 		$line_items = array();
 
 		foreach ( $order->get_items( array( 'line_item', 'fee' ) ) as $item_id => $item ) {
-			$original_qty = $item->get_quantity();
-			$refunded_qty = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
+			$original_qty  = $item->get_quantity();
+			$refunded_qty  = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
 			$remaining_qty = $original_qty - $refunded_qty;
 
 			// Skip if nothing left to refund or invalid quantity
@@ -806,7 +830,7 @@ class Order extends Generator {
 	 * @return array Refund line items.
 	 */
 	protected static function build_partial_refund_items( $order, $refunded_qty_by_item ) {
-		$items = $order->get_items( array( 'line_item', 'fee' ) );
+		$items      = $order->get_items( array( 'line_item', 'fee' ) );
 		$line_items = array();
 
 		// Decide whether to refund full items or partial quantities
@@ -814,8 +838,8 @@ class Order extends Generator {
 
 		if ( $refund_full_items && count( $items ) > 2 ) {
 			// Refund a random subset of items completely (requires at least 3 items)
-			$items_array  = array_values( $items );
-			$num_to_refund = wp_rand( 1, count( $items_array ) - 1 );
+			$items_array     = array_values( $items );
+			$num_to_refund   = wp_rand( 1, count( $items_array ) - 1 );
 			$items_to_refund = array_rand( $items_array, $num_to_refund );
 
 			// Ensure $items_to_refund is always an array for consistent iteration
@@ -824,10 +848,10 @@ class Order extends Generator {
 			}
 
 			foreach ( $items_to_refund as $index ) {
-				$item = $items_array[ $index ];
-				$item_id = $item->get_id();
-				$original_qty = $item->get_quantity();
-				$refunded_qty = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
+				$item          = $items_array[ $index ];
+				$item_id       = $item->get_id();
+				$original_qty  = $item->get_quantity();
+				$refunded_qty  = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
 				$remaining_qty = $original_qty - $refunded_qty;
 
 				// Skip if nothing left to refund or invalid quantity
@@ -840,8 +864,8 @@ class Order extends Generator {
 		} else {
 			// Refund partial quantities of items
 			foreach ( $items as $item_id => $item ) {
-				$original_qty = $item->get_quantity();
-				$refunded_qty = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
+				$original_qty  = $item->get_quantity();
+				$refunded_qty  = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
 				$remaining_qty = $original_qty - $refunded_qty;
 
 				// Skip if nothing left to refund, if only 1 remaining, or invalid quantity
@@ -851,7 +875,7 @@ class Order extends Generator {
 
 				// Only refund line items with remaining quantity > 1
 				if ( 'line_item' === $item->get_type() ) {
-					$refund_qty = wp_rand( 1, $remaining_qty - 1 );
+					$refund_qty             = wp_rand( 1, $remaining_qty - 1 );
 					$line_items[ $item_id ] = self::build_refund_line_item( $item, $refund_qty, $original_qty );
 					break; // Only refund one item partially
 				}
@@ -863,9 +887,9 @@ class Order extends Generator {
 				shuffle( $items_array );
 
 				foreach ( $items_array as $item ) {
-					$item_id = $item->get_id();
-					$original_qty = $item->get_quantity();
-					$refunded_qty = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
+					$item_id       = $item->get_id();
+					$original_qty  = $item->get_quantity();
+					$refunded_qty  = isset( $refunded_qty_by_item[ $item_id ] ) ? $refunded_qty_by_item[ $item_id ] : 0;
 					$remaining_qty = $original_qty - $refunded_qty;
 
 					// Skip if nothing left to refund or invalid quantity
@@ -896,7 +920,7 @@ class Order extends Generator {
 		foreach ( $line_items as $item_data ) {
 			// Add item total: refund amounts are stored as negative, convert to positive for total calculation
 			$refund_amount += abs( $item_data['refund_total'] );
-			$total_items++;
+			++$total_items;
 			$total_qty += $item_data['qty'];
 
 			// Add tax amounts
@@ -928,7 +952,7 @@ class Order extends Generator {
 		if ( $previous_refund ) {
 			// Second refund: must be after first refund but before current time
 			$base_timestamp = strtotime( $previous_refund->get_date_created()->date( 'Y-m-d H:i:s' ) );
-			$max_timestamp = min( $base_timestamp + ( self::SECOND_REFUND_MAX_DAYS * DAY_IN_SECONDS ), $now );
+			$max_timestamp  = min( $base_timestamp + ( self::SECOND_REFUND_MAX_DAYS * DAY_IN_SECONDS ), $now );
 
 			// Ensure second refund is always after first refund
 			if ( $max_timestamp <= $base_timestamp ) {
@@ -941,7 +965,7 @@ class Order extends Generator {
 		} else {
 			// First refund: within 2 months of order completion, but never in the future
 			$completion_timestamp = strtotime( $order->get_date_completed()->date( 'Y-m-d H:i:s' ) );
-			$max_timestamp = min( $completion_timestamp + ( self::FIRST_REFUND_MAX_DAYS * DAY_IN_SECONDS ), $now );
+			$max_timestamp        = min( $completion_timestamp + ( self::FIRST_REFUND_MAX_DAYS * DAY_IN_SECONDS ), $now );
 
 			// Ensure we have a valid time window
 			if ( $max_timestamp < $completion_timestamp ) {
@@ -992,7 +1016,7 @@ class Order extends Generator {
 		$dates = array();
 		for ( $i = 0; $i < $count; $i++ ) {
 			$random_days = wp_rand( 0, $days_between );
-			$dates[] = date( 'Y-m-d', $start_timestamp + ( $random_days * DAY_IN_SECONDS ) );
+			$dates[]     = date( 'Y-m-d', $start_timestamp + ( $random_days * DAY_IN_SECONDS ) );
 		}
 
 		// Sort chronologically so lower order IDs get earlier dates
@@ -1000,5 +1024,4 @@ class Order extends Generator {
 
 		return $dates;
 	}
-
 }
