@@ -19,6 +19,11 @@ cd wc-smooth-generator
 composer install --no-dev
 ```
 
+# Skipp husky pre-commit check
+```
+git commit --am --no-verify "Commit message";
+```
+
 ## Requirements
 
 - PHP 7.4+
@@ -50,6 +55,9 @@ wp wc generate products 5 --type=bookable-service
 
 # Generate bookable event products (requires WooCommerce Bookings + experimental features)
 wp wc generate products 5 --type=bookable-event
+
+# Generate 25 simple products without image
+wp wc generate products 25 --no-images --type=simple
 ```
 
 | Option | Description |
