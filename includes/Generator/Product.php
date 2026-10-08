@@ -80,19 +80,19 @@ class Product extends Generator {
 		switch ( $type ) {
 			case 'simple':
 			default:
-				$product = self::generate_simple_product();
+				$product = self::generate_simple_product( $assoc_args );
 				break;
 			case 'variable':
-				$product = self::generate_variable_product();
+				$product = self::generate_variable_product( $assoc_args );
 				break;
 			case 'booking':
-				$product = self::generate_booking_product();
+				$product = self::generate_booking_product( $assoc_args );
 				break;
 			case 'bookable-service':
-				$product = self::generate_bookable_service_product();
+				$product = self::generate_bookable_service_product( $assoc_args );
 				break;
 			case 'bookable-event':
-				$product = self::generate_bookable_event_product();
+				$product = self::generate_bookable_event_product( $assoc_args );
 				break;
 		}
 
@@ -352,12 +352,13 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Variable|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_variable_product() {
+	protected static function generate_variable_product( array $assoc_args = array() ) {
+		$no_images = ! empty( $assoc_args['no-images'] );
 		$name              = ucwords( self::$faker->productName );
 		$will_manage_stock = self::$faker->boolean();
 		$product           = new \WC_Product_Variable();
 
-		$gallery    = self::maybe_get_gallery_image_ids();
+		$gallery    = $no_images ? array() : self::maybe_get_gallery_image_ids();
 		$attributes = self::generate_attributes( self::$faker->numberBetween( 1, 3 ), 5 );
 
 		// Check if attribute generation failed.
@@ -380,7 +381,7 @@ class Product extends Generator {
 			'sold_individually' => self::$faker->boolean( 20 ),
 			'upsell_ids'        => self::get_existing_product_ids(),
 			'cross_sell_ids'    => self::get_existing_product_ids(),
-			'image_id'          => self::get_image(),
+			'image_id'          => $no_images ? 0 : self::get_image(),
 			'category_ids'      => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 3 ) ),
 			'tag_ids'           => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 5 ) ),
 			'gallery_image_ids' => $gallery,
@@ -421,7 +422,7 @@ class Product extends Generator {
 				'height'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
 				'virtual'           => $is_virtual,
 				'downloadable'      => false,
-				'image_id'          => self::get_image(),
+				'image_id'          => $no_images ? 0 : self::get_image(),
 			) );
 
 			// Set COGS if the feature is enabled.
@@ -442,7 +443,8 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product
 	 */
-	protected static function generate_simple_product() {
+	protected static function generate_simple_product( array $assoc_args = array() ) {
+		$no_images = ! empty( $assoc_args['no-images'] );
 		$name              = ucwords( self::$faker->productName );
 		$will_manage_stock = self::$faker->boolean();
 		$is_virtual        = self::$faker->boolean();
@@ -454,8 +456,8 @@ class Product extends Generator {
 		$date_on_sale_to   = $has_sale_schedule ? self::$faker->dateTimeBetween( '+4 days', '+4 months' )->format( DATE_ATOM ) : '';
 		$product           = new \WC_Product();
 
-		$image_id = self::get_image();
-		$gallery  = self::maybe_get_gallery_image_ids();
+		$image_id = $no_images ? 0 : self::get_image();
+		$gallery  = $no_images ? array() : self::maybe_get_gallery_image_ids();
 
 		$product->set_props( array(
 			'name'               => $name,
@@ -577,7 +579,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Booking|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_booking_product() {
+	protected static function generate_booking_product( array $assoc_args = array() ) {
 		if ( ! self::is_bookings_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings',
@@ -600,7 +602,7 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Booking();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
 		$product->set_props( array(
 			'name'               => $name,
@@ -662,7 +664,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Bookable_Service|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_bookable_service_product() {
+	protected static function generate_bookable_service_product( array $assoc_args = array() ) {
 		if ( ! Booking::is_bookings_experimental_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings_experimental',
@@ -675,7 +677,7 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Bookable_Service();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
 		$product->set_props( array(
 			'name'               => $name,
@@ -717,7 +719,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Bookable_Event|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_bookable_event_product() {
+	protected static function generate_bookable_event_product( array $assoc_args = array() ) {
 		if ( ! Booking::is_bookings_experimental_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings_experimental',
@@ -730,7 +732,7 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Bookable_Event();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
 		$product->set_props( array(
 			'name'               => $name,

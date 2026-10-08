@@ -23,6 +23,9 @@ class CLI extends WP_CLI_Command {
 		list( $amount ) = $args;
 		$amount = absint( $amount );
 
+                $no_images = ( isset( $assoc_args['images'] ) && false === $assoc_args['images'] ) || ! empty( $assoc_args['no-images'] );
+                $assoc_args['no-images'] = $no_images;
+
 		$time_start = microtime( true );
 
 		$requested_type = $assoc_args['type'] ?? null;
@@ -35,8 +38,10 @@ class CLI extends WP_CLI_Command {
 
 		WP_CLI::line( 'Initializing...' );
 
-		// Pre-generate images. Min 20, max 100.
-		Generator\Product::seed_images( min( $amount + 19, 100 ) );
+                // Pre-generate images unless --no-images flag is set. Min 20, max 100.
+                if ( empty( $assoc_args['no-images'] ) ) {
+                        Generator\Product::seed_images( min( $amount + 19, 100 ) );
+                }
 
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating products', $amount );
 
@@ -81,6 +86,9 @@ class CLI extends WP_CLI_Command {
 	public static function orders( $args, $assoc_args ) {
 		list( $amount ) = $args;
 		$amount = absint( $amount );
+
+                $no_images = ( isset( $assoc_args['images'] ) && false === $assoc_args['images'] ) || ! empty( $assoc_args['no-images'] );
+                $assoc_args['no-images'] = $no_images;
 
 		$time_start = microtime( true );
 
@@ -140,6 +148,9 @@ class CLI extends WP_CLI_Command {
 		list( $amount ) = $args;
 		$amount = absint( $amount );
 
+                $no_images = ( isset( $assoc_args['images'] ) && false === $assoc_args['images'] ) || ! empty( $assoc_args['no-images'] );
+                $assoc_args['no-images'] = $no_images;
+
 		$time_start = microtime( true );
 
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating customers', $amount );
@@ -185,6 +196,9 @@ class CLI extends WP_CLI_Command {
 	public static function coupons( $args, $assoc_args ) {
 		list( $amount ) = $args;
 		$amount = absint( $amount );
+
+                $no_images = ( isset( $assoc_args['images'] ) && false === $assoc_args['images'] ) || ! empty( $assoc_args['no-images'] );
+                $assoc_args['no-images'] = $no_images;
 
 		$time_start = microtime( true );
 
@@ -283,6 +297,9 @@ class CLI extends WP_CLI_Command {
 		list( $taxonomy, $amount ) = $args;
 		$amount = absint( $amount );
 
+                $no_images = ( isset( $assoc_args['images'] ) && false === $assoc_args['images'] ) || ! empty( $assoc_args['no-images'] );
+                $assoc_args['no-images'] = $no_images;
+
 		$time_start = microtime( true );
 
 		$progress = \WP_CLI\Utils\make_progress_bar( 'Generating terms', $amount );
@@ -343,8 +360,14 @@ WP_CLI::add_command( 'wc generate products', array( 'WC\SmoothGenerator\CLI', 'p
 			'description' => 'Only apply existing categories and tags to products, rather than generating new ones.',
 			'optional'    => true,
 		),
+                array(
+                        'name'        => 'images',
+                        'type'        => 'flag',
+                        'description' => 'Whether to generate images. Pass --no-images to skip images.',
+                        'optional'    => true,
+                ),
 	),
-	'longdesc'  => "## EXAMPLES\n\nwc generate products 10\n\nwc generate products 20 --type=variable --use-existing-terms\n\nwc generate products 5 --type=booking\n\nwc generate products 5 --type=bookable-service\n\nwc generate products 5 --type=bookable-event",
+	'longdesc'  => "## EXAMPLES\n\nwc generate products 10\n\nwc generate products 20 --type=variable --use-existing-terms\n\nwc generate products 5 --type=booking\n\nwc generate products 5 --type=bookable-service\n\nwc generate products 5 --type=bookable-event\n\nwc generate products 1000 --type=simple --no-images",
 ) );
 
 WP_CLI::add_command( 'wc generate orders', array( 'WC\SmoothGenerator\CLI', 'orders' ), array(
