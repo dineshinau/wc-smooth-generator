@@ -29,7 +29,13 @@ class CustomerTest extends WP_UnitTestCase {
 	 * Test customer has billing information.
 	 */
 	public function test_customer_has_billing_info() {
-		$customer = Customer::generate( true, array( 'type' => 'person', 'country' => 'US' ) );
+		$customer = Customer::generate(
+			true,
+			array(
+				'type'    => 'person',
+				'country' => 'US',
+			)
+		);
 
 		$this->assertNotEmpty( $customer->get_billing_first_name(), 'Billing first name should not be empty' );
 		$this->assertNotEmpty( $customer->get_billing_last_name(), 'Billing last name should not be empty' );
@@ -108,13 +114,13 @@ class CustomerTest extends WP_UnitTestCase {
 	 * Test customer action hook is fired.
 	 */
 	public function test_customer_generated_action_hook() {
-		$hook_fired = false;
+		$hook_fired         = false;
 		$generated_customer = null;
 
 		add_action(
 			'smoothgenerator_customer_generated',
 			function ( $customer ) use ( &$hook_fired, &$generated_customer ) {
-				$hook_fired = true;
+				$hook_fired         = true;
 				$generated_customer = $customer;
 			}
 		);

@@ -279,7 +279,7 @@ class Settings {
 				} );
 			} )( jQuery );
 		</script>
-	<?php
+		<?php
 	}
 
 	/**
@@ -313,17 +313,17 @@ class Settings {
 	 */
 	public static function process_page_submit() {
 		$args = array();
-		
+
 		if ( ! empty( $_POST['use_date_range'] ) ) {
 			$args['date-start'] = sanitize_text_field( $_POST['start_date'] );
-			$args['date-end'] = sanitize_text_field( $_POST['end_date'] );
+			$args['date-end']   = sanitize_text_field( $_POST['end_date'] );
 		}
 
 		if ( ! empty( $_POST['generate_products'] ) && ! empty( $_POST['num_products_to_generate'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
 			$num_to_generate = absint( $_POST['num_products_to_generate'] );
 			BatchProcessor::create_new_job( 'products', $num_to_generate, $args );
-		} else if ( ! empty( $_POST['generate_orders'] ) && ! empty( $_POST['num_orders_to_generate'] ) ) {
+		} elseif ( ! empty( $_POST['generate_orders'] ) && ! empty( $_POST['num_orders_to_generate'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
 			$num_to_generate = absint( $_POST['num_orders_to_generate'] );
 			BatchProcessor::create_new_job( 'orders', $num_to_generate, $args );
@@ -331,7 +331,7 @@ class Settings {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
 			$num_to_generate = absint( $_POST['num_bookings_to_generate'] );
 			BatchProcessor::create_new_job( 'bookings', $num_to_generate, $args );
-		} else if ( ! empty( $_POST['cancel_job'] ) ) {
+		} elseif ( ! empty( $_POST['cancel_job'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
 			BatchProcessor::delete_current_job();
 		}
@@ -370,7 +370,7 @@ class Settings {
 					$next_wait = 0;
 				}
 				$embed = $videos[ $next_wait ];
-				$next_wait ++;
+				++$next_wait;
 				setcookie(
 					'smoothgenerator_next_wait',
 					$next_wait,

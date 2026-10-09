@@ -134,7 +134,7 @@ class Coupon extends Generator {
 
 		$coupon_ids = array();
 
-		for ( $i = 1; $i <= $amount; $i ++ ) {
+		for ( $i = 1; $i <= $amount; $i++ ) {
 			$coupon = self::generate( true, $args );
 			if ( is_wp_error( $coupon ) ) {
 				return $coupon;
@@ -172,4 +172,3 @@ class Coupon extends Generator {
 		return new \WC_Coupon( $random_coupon_id );
 	}
 }
-

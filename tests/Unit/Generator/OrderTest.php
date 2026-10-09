@@ -172,8 +172,14 @@ class OrderTest extends WP_UnitTestCase {
 	 * Test order with specific date.
 	 */
 	public function test_order_with_date() {
-		$date = '2024-01-15';
-		$order = Order::generate( true, array( 'date-start' => $date, 'date-end' => $date ) );
+		$date  = '2024-01-15';
+		$order = Order::generate(
+			true,
+			array(
+				'date-start' => $date,
+				'date-end'   => $date,
+			)
+		);
 
 		$created_date = $order->get_date_created()->format( 'Y-m-d' );
 		$this->assertEquals( $date, $created_date );
@@ -211,7 +217,13 @@ class OrderTest extends WP_UnitTestCase {
 		$coupon->save();
 
 		// Set the coupons flag to ensure at least one coupon exists.
-		$order = Order::generate( true, array( 'coupon-ratio' => 1.0, 'coupons' => true ) );
+		$order = Order::generate(
+			true,
+			array(
+				'coupon-ratio' => 1.0,
+				'coupons'      => true,
+			)
+		);
 
 		$coupons = $order->get_coupon_codes();
 		// Note: Coupon application may fail if order total is less than coupon amount or other validation fails.
@@ -225,13 +237,13 @@ class OrderTest extends WP_UnitTestCase {
 	 * Test order action hook is fired.
 	 */
 	public function test_order_generated_action_hook() {
-		$hook_fired = false;
+		$hook_fired      = false;
 		$generated_order = null;
 
 		add_action(
 			'smoothgenerator_order_generated',
 			function ( $order ) use ( &$hook_fired, &$generated_order ) {
-				$hook_fired = true;
+				$hook_fired      = true;
 				$generated_order = $order;
 			}
 		);
@@ -309,7 +321,7 @@ class OrderTest extends WP_UnitTestCase {
 			$refunds = $order->get_refunds();
 			if ( ! empty( $refunds ) ) {
 				$refunded_amount = $order->get_total_refunded();
-				$order_total = $order->get_total();
+				$order_total     = $order->get_total();
 
 				// If it's a partial refund (not full).
 				if ( $refunded_amount > 0 && $refunded_amount < $order_total ) {
@@ -348,7 +360,7 @@ class OrderTest extends WP_UnitTestCase {
 		foreach ( $order_ids as $order_id ) {
 			$order = wc_get_order( $order_id );
 			if ( count( $order->get_coupon_codes() ) > 0 ) {
-				$coupon_count++;
+				++$coupon_count;
 			}
 		}
 
@@ -376,7 +388,7 @@ class OrderTest extends WP_UnitTestCase {
 		foreach ( $order_ids as $order_id ) {
 			$order = wc_get_order( $order_id );
 			if ( count( $order->get_refunds() ) > 0 ) {
-				$refund_count++;
+				++$refund_count;
 			}
 		}
 
@@ -442,9 +454,9 @@ class OrderTest extends WP_UnitTestCase {
 
 		$dates = array();
 		foreach ( $order_ids as $order_id ) {
-			$order   = wc_get_order( $order_id );
+			$order     = wc_get_order( $order_id );
 			$timestamp = $order->get_date_created()->getTimestamp();
-			$dates[] = $timestamp;
+			$dates[]   = $timestamp;
 
 			// Verify each date is within the specified range.
 			$this->assertGreaterThanOrEqual( $start_timestamp, $timestamp, 'Order date should be after start date' );
@@ -502,7 +514,7 @@ class OrderTest extends WP_UnitTestCase {
 
 		$refunds = $order->get_refunds();
 		if ( ! empty( $refunds ) ) {
-			$refund = $refunds[0];
+			$refund          = $refunds[0];
 			$order_completed = $order->get_date_completed()->getTimestamp();
 			$refund_created  = $refund->get_date_created()->getTimestamp();
 

@@ -368,10 +368,13 @@ class ProductTest extends WP_UnitTestCase {
 		wp_insert_term( 'Test Category', 'product_cat' );
 		wp_insert_term( 'Test Tag', 'product_tag' );
 
-		$product_ids = Product::batch( 3, array(
-			'use-existing-terms' => true,
-			'type'               => 'simple',
-		) );
+		$product_ids = Product::batch(
+			3,
+			array(
+				'use-existing-terms' => true,
+				'type'               => 'simple',
+			)
+		);
 
 		$this->assertIsArray( $product_ids );
 		$this->assertCount( 3, $product_ids );

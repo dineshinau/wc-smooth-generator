@@ -68,7 +68,7 @@ abstract class Generator {
 	 * @return int[]|\WP_Error An array of IDs of created objects on success.
 	 */
 	// TODO normalize the signature of this method in all generator classes so we can add this to the contract.
-	//abstract public static function batch( $amount, array $args = array() );
+	// abstract public static function batch( $amount, array $args = array() );
 
 	/**
 	 * Get ready to generate objects.

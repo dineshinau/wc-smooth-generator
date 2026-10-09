@@ -189,13 +189,13 @@ class CouponTest extends WP_UnitTestCase {
 	 * Test coupon action hook is fired.
 	 */
 	public function test_coupon_generated_action_hook() {
-		$hook_fired = false;
+		$hook_fired       = false;
 		$generated_coupon = null;
 
 		add_action(
 			'smoothgenerator_coupon_generated',
 			function ( $coupon ) use ( &$hook_fired, &$generated_coupon ) {
-				$hook_fired = true;
+				$hook_fired       = true;
 				$generated_coupon = $coupon;
 			}
 		);

@@ -144,7 +144,7 @@ class Customer extends Generator {
 		$customer_ids = array();
 
 		for ( $i = 1; $i <= $amount; $i++ ) {
-			$customer       = self::generate( true, $args );
+			$customer = self::generate( true, $args );
 			if ( is_wp_error( $customer ) ) {
 				return $customer;
 			}

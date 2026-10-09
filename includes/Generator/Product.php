@@ -80,19 +80,19 @@ class Product extends Generator {
 		switch ( $type ) {
 			case 'simple':
 			default:
-				$product = self::generate_simple_product();
+				$product = self::generate_simple_product( $assoc_args );
 				break;
 			case 'variable':
-				$product = self::generate_variable_product();
+				$product = self::generate_variable_product( $assoc_args );
 				break;
 			case 'booking':
-				$product = self::generate_booking_product();
+				$product = self::generate_booking_product( $assoc_args );
 				break;
 			case 'bookable-service':
-				$product = self::generate_bookable_service_product();
+				$product = self::generate_bookable_service_product( $assoc_args );
 				break;
 			case 'bookable-event':
-				$product = self::generate_bookable_event_product();
+				$product = self::generate_bookable_event_product( $assoc_args );
 				break;
 		}
 
@@ -185,27 +185,32 @@ class Product extends Generator {
 	protected static function create_global_attribute( $raw_name ) {
 		$slug = wc_sanitize_taxonomy_name( $raw_name );
 
-		$attribute_id = wc_create_attribute( array(
-			'name'         => $raw_name,
-			'slug'         => $slug,
-			'type'         => 'select',
-			'order_by'     => 'menu_order',
-			'has_archives' => false,
-		) );
+		$attribute_id = wc_create_attribute(
+			array(
+				'name'         => $raw_name,
+				'slug'         => $slug,
+				'type'         => 'select',
+				'order_by'     => 'menu_order',
+				'has_archives' => false,
+			)
+		);
 
 		$taxonomy_name = wc_attribute_taxonomy_name( $slug );
 		register_taxonomy(
 			$taxonomy_name,
 			apply_filters( 'woocommerce_taxonomy_objects_' . $taxonomy_name, array( 'product' ) ),
-			apply_filters( 'woocommerce_taxonomy_args_' . $taxonomy_name, array(
-				'labels'       => array(
-					'name' => $raw_name,
-				),
-				'hierarchical' => true,
-				'show_ui'      => false,
-				'query_var'    => true,
-				'rewrite'      => false,
-			) )
+			apply_filters(
+				'woocommerce_taxonomy_args_' . $taxonomy_name,
+				array(
+					'labels'       => array(
+						'name' => $raw_name,
+					),
+					'hierarchical' => true,
+					'show_ui'      => false,
+					'query_var'    => true,
+					'rewrite'      => false,
+				)
+			)
 		);
 
 		self::$global_attributes[ $raw_name ] = isset( self::$global_attributes[ $raw_name ] ) ? self::$global_attributes[ $raw_name ] : array();
@@ -341,10 +346,12 @@ class Product extends Generator {
 			return $type;
 		}
 
-		return self::random_weighted_element( array(
-			'simple'   => 80,
-			'variable' => 20,
-		) );
+		return self::random_weighted_element(
+			array(
+				'simple'   => 80,
+				'variable' => 20,
+			)
+		);
 	}
 
 	/**
@@ -352,12 +359,13 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Variable|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_variable_product() {
+	protected static function generate_variable_product( array $assoc_args = array() ) {
+		$no_images         = ! empty( $assoc_args['no-images'] );
 		$name              = ucwords( self::$faker->productName );
 		$will_manage_stock = self::$faker->boolean();
 		$product           = new \WC_Product_Variable();
 
-		$gallery    = self::maybe_get_gallery_image_ids();
+		$gallery    = $no_images ? array() : self::maybe_get_gallery_image_ids();
 		$attributes = self::generate_attributes( self::$faker->numberBetween( 1, 3 ), 5 );
 
 		// Check if attribute generation failed.
@@ -365,29 +373,31 @@ class Product extends Generator {
 			return $attributes;
 		}
 
-		$product->set_props( array(
-			'name'              => $name,
-			'featured'          => self::$faker->boolean( 10 ),
-			'sku'               => sanitize_title( $name ) . '-' . self::$faker->ean8,
-			'global_unique_id'  => self::$faker->randomElement( array( self::$faker->ean13, self::$faker->isbn10 ) ),
-			'attributes'        => $attributes,
-			'tax_status'        => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
-			'tax_class'         => '',
-			'manage_stock'      => $will_manage_stock,
-			'stock_quantity'    => $will_manage_stock ? self::$faker->numberBetween( -100, 100 ) : null,
-			'stock_status'      => 'instock',
-			'backorders'        => self::$faker->randomElement( array( 'yes', 'no', 'notify' ) ),
-			'sold_individually' => self::$faker->boolean( 20 ),
-			'upsell_ids'        => self::get_existing_product_ids(),
-			'cross_sell_ids'    => self::get_existing_product_ids(),
-			'image_id'          => self::get_image(),
-			'category_ids'      => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 3 ) ),
-			'tag_ids'           => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 5 ) ),
-			'gallery_image_ids' => $gallery,
-			'reviews_allowed'   => self::$faker->boolean(),
-			'purchase_note'     => self::$faker->boolean() ? self::$faker->text() : '',
-			'menu_order'        => self::$faker->numberBetween( 0, 10000 ),
-		) );
+		$product->set_props(
+			array(
+				'name'              => $name,
+				'featured'          => self::$faker->boolean( 10 ),
+				'sku'               => sanitize_title( $name ) . '-' . self::$faker->ean8,
+				'global_unique_id'  => self::$faker->randomElement( array( self::$faker->ean13, self::$faker->isbn10 ) ),
+				'attributes'        => $attributes,
+				'tax_status'        => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
+				'tax_class'         => '',
+				'manage_stock'      => $will_manage_stock,
+				'stock_quantity'    => $will_manage_stock ? self::$faker->numberBetween( -100, 100 ) : null,
+				'stock_status'      => 'instock',
+				'backorders'        => self::$faker->randomElement( array( 'yes', 'no', 'notify' ) ),
+				'sold_individually' => self::$faker->boolean( 20 ),
+				'upsell_ids'        => self::get_existing_product_ids(),
+				'cross_sell_ids'    => self::get_existing_product_ids(),
+				'image_id'          => $no_images ? 0 : self::get_image(),
+				'category_ids'      => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 3 ) ),
+				'tag_ids'           => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 5 ) ),
+				'gallery_image_ids' => $gallery,
+				'reviews_allowed'   => self::$faker->boolean(),
+				'purchase_note'     => self::$faker->boolean() ? self::$faker->text() : '',
+				'menu_order'        => self::$faker->numberBetween( 0, 10000 ),
+			)
+		);
 		// Need to save to get an ID for variations.
 		$product->save();
 
@@ -403,26 +413,28 @@ class Product extends Generator {
 			$date_on_sale_to   = $has_sale_schedule ? self::$faker->dateTimeBetween( '+4 days', '+4 months' )->format( DATE_ATOM ) : '';
 			$is_virtual        = self::$faker->boolean( 20 );
 			$variation         = new \WC_Product_Variation();
-			$variation->set_props( array(
-				'parent_id'         => $product->get_id(),
-				'attributes'        => $possible_attribute,
-				'regular_price'     => $price,
-				'sale_price'        => $sale_price,
-				'date_on_sale_from' => $date_on_sale_from,
-				'date_on_sale_to'   => $date_on_sale_to,
-				'tax_status'        => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
-				'tax_class'         => '',
-				'manage_stock'      => $will_manage_stock,
-				'stock_quantity'    => $will_manage_stock ? self::$faker->numberBetween( -20, 100 ) : null,
-				'stock_status'      => 'instock',
-				'weight'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-				'length'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-				'width'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-				'height'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-				'virtual'           => $is_virtual,
-				'downloadable'      => false,
-				'image_id'          => self::get_image(),
-			) );
+			$variation->set_props(
+				array(
+					'parent_id'         => $product->get_id(),
+					'attributes'        => $possible_attribute,
+					'regular_price'     => $price,
+					'sale_price'        => $sale_price,
+					'date_on_sale_from' => $date_on_sale_from,
+					'date_on_sale_to'   => $date_on_sale_to,
+					'tax_status'        => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
+					'tax_class'         => '',
+					'manage_stock'      => $will_manage_stock,
+					'stock_quantity'    => $will_manage_stock ? self::$faker->numberBetween( -20, 100 ) : null,
+					'stock_status'      => 'instock',
+					'weight'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+					'length'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+					'width'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+					'height'            => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+					'virtual'           => $is_virtual,
+					'downloadable'      => false,
+					'image_id'          => $no_images ? 0 : self::get_image(),
+				)
+			);
 
 			// Set COGS if the feature is enabled.
 			if ( wc_get_container()->get( 'Automattic\WooCommerce\Internal\CostOfGoodsSold\CostOfGoodsSoldController' )->feature_is_enabled() ) {
@@ -442,7 +454,8 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product
 	 */
-	protected static function generate_simple_product() {
+	protected static function generate_simple_product( array $assoc_args = array() ) {
+		$no_images         = ! empty( $assoc_args['no-images'] );
 		$name              = ucwords( self::$faker->productName );
 		$will_manage_stock = self::$faker->boolean();
 		$is_virtual        = self::$faker->boolean();
@@ -454,47 +467,49 @@ class Product extends Generator {
 		$date_on_sale_to   = $has_sale_schedule ? self::$faker->dateTimeBetween( '+4 days', '+4 months' )->format( DATE_ATOM ) : '';
 		$product           = new \WC_Product();
 
-		$image_id = self::get_image();
-		$gallery  = self::maybe_get_gallery_image_ids();
+		$image_id = $no_images ? 0 : self::get_image();
+		$gallery  = $no_images ? array() : self::maybe_get_gallery_image_ids();
 
-		$product->set_props( array(
-			'name'               => $name,
-			'featured'           => self::$faker->boolean(),
-			'catalog_visibility' => 'visible',
-			'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 5 ), true ),
-			'short_description'  => self::$faker->text(),
-			'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
-			'global_unique_id'   => self::$faker->randomElement( array( self::$faker->ean13, self::$faker->isbn10 ) ),
-			'regular_price'      => $price,
-			'sale_price'         => $sale_price,
-			'date_on_sale_from'  => $date_on_sale_from,
-			'date_on_sale_to'    => $date_on_sale_to,
-			'total_sales'        => self::$faker->numberBetween( 0, 10000 ),
-			'tax_status'         => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
-			'tax_class'          => '',
-			'manage_stock'       => $will_manage_stock,
-			'stock_quantity'     => $will_manage_stock ? self::$faker->numberBetween( -100, 100 ) : null,
-			'stock_status'       => 'instock',
-			'backorders'         => self::$faker->randomElement( array( 'yes', 'no', 'notify' ) ),
-			'sold_individually'  => self::$faker->boolean( 20 ),
-			'weight'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-			'length'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-			'width'              => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-			'height'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
-			'upsell_ids'         => self::get_existing_product_ids(),
-			'cross_sell_ids'     => self::get_existing_product_ids(),
-			'parent_id'          => 0,
-			'reviews_allowed'    => self::$faker->boolean(),
-			'purchase_note'      => self::$faker->boolean() ? self::$faker->text() : '',
-			'menu_order'         => self::$faker->numberBetween( 0, 10000 ),
-			'virtual'            => $is_virtual,
-			'downloadable'       => false,
-			'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 3 ) ),
-			'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 5 ) ),
-			'shipping_class_id'  => 0,
-			'image_id'           => $image_id,
-			'gallery_image_ids'  => $gallery,
-		) );
+		$product->set_props(
+			array(
+				'name'               => $name,
+				'featured'           => self::$faker->boolean(),
+				'catalog_visibility' => 'visible',
+				'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 5 ), true ),
+				'short_description'  => self::$faker->text(),
+				'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
+				'global_unique_id'   => self::$faker->randomElement( array( self::$faker->ean13, self::$faker->isbn10 ) ),
+				'regular_price'      => $price,
+				'sale_price'         => $sale_price,
+				'date_on_sale_from'  => $date_on_sale_from,
+				'date_on_sale_to'    => $date_on_sale_to,
+				'total_sales'        => self::$faker->numberBetween( 0, 10000 ),
+				'tax_status'         => self::$faker->randomElement( array( 'taxable', 'shipping', 'none' ) ),
+				'tax_class'          => '',
+				'manage_stock'       => $will_manage_stock,
+				'stock_quantity'     => $will_manage_stock ? self::$faker->numberBetween( -100, 100 ) : null,
+				'stock_status'       => 'instock',
+				'backorders'         => self::$faker->randomElement( array( 'yes', 'no', 'notify' ) ),
+				'sold_individually'  => self::$faker->boolean( 20 ),
+				'weight'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+				'length'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+				'width'              => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+				'height'             => $is_virtual ? '' : self::$faker->numberBetween( 1, 200 ),
+				'upsell_ids'         => self::get_existing_product_ids(),
+				'cross_sell_ids'     => self::get_existing_product_ids(),
+				'parent_id'          => 0,
+				'reviews_allowed'    => self::$faker->boolean(),
+				'purchase_note'      => self::$faker->boolean() ? self::$faker->text() : '',
+				'menu_order'         => self::$faker->numberBetween( 0, 10000 ),
+				'virtual'            => $is_virtual,
+				'downloadable'       => false,
+				'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 3 ) ),
+				'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 5 ) ),
+				'shipping_class_id'  => 0,
+				'image_id'           => $image_id,
+				'gallery_image_ids'  => $gallery,
+			)
+		);
 
 		// Set COGS if the feature is enabled.
 		if ( wc_get_container()->get( 'Automattic\WooCommerce\Internal\CostOfGoodsSold\CostOfGoodsSoldController' )->feature_is_enabled() ) {
@@ -577,7 +592,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Booking|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_booking_product() {
+	protected static function generate_booking_product( array $assoc_args = array() ) {
 		if ( ! self::is_bookings_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings',
@@ -600,20 +615,22 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Booking();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
-		$product->set_props( array(
-			'name'               => $name,
-			'featured'           => self::$faker->boolean( 10 ),
-			'catalog_visibility' => 'visible',
-			'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 3 ), true ),
-			'short_description'  => self::$faker->sentence(),
-			'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
-			'regular_price'      => $cost,
-			'image_id'           => $image_id,
-			'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
-			'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
-		) );
+		$product->set_props(
+			array(
+				'name'               => $name,
+				'featured'           => self::$faker->boolean( 10 ),
+				'catalog_visibility' => 'visible',
+				'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 3 ), true ),
+				'short_description'  => self::$faker->sentence(),
+				'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
+				'regular_price'      => $cost,
+				'image_id'           => $image_id,
+				'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
+				'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
+			)
+		);
 
 		// Booking-specific settings.
 		$product->set_duration_type( 'fixed' );
@@ -662,7 +679,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Bookable_Service|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_bookable_service_product() {
+	protected static function generate_bookable_service_product( array $assoc_args = array() ) {
 		if ( ! Booking::is_bookings_experimental_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings_experimental',
@@ -675,20 +692,22 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Bookable_Service();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
-		$product->set_props( array(
-			'name'               => $name,
-			'featured'           => self::$faker->boolean( 10 ),
-			'catalog_visibility' => 'visible',
-			'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 2 ), true ),
-			'short_description'  => self::$faker->sentence(),
-			'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
-			'regular_price'      => $cost,
-			'image_id'           => $image_id,
-			'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
-			'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
-		) );
+		$product->set_props(
+			array(
+				'name'               => $name,
+				'featured'           => self::$faker->boolean( 10 ),
+				'catalog_visibility' => 'visible',
+				'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 2 ), true ),
+				'short_description'  => self::$faker->sentence(),
+				'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
+				'regular_price'      => $cost,
+				'image_id'           => $image_id,
+				'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
+				'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
+			)
+		);
 
 		// Duration is always in minutes for service products (enforced by the class).
 		$product->set_duration( self::$faker->randomElement( array( 15, 20, 30, 45, 60 ) ) );
@@ -717,7 +736,7 @@ class Product extends Generator {
 	 *
 	 * @return \WC_Product_Bookable_Event|\WP_Error Product object or WP_Error on failure.
 	 */
-	protected static function generate_bookable_event_product() {
+	protected static function generate_bookable_event_product( array $assoc_args = array() ) {
 		if ( ! Booking::is_bookings_experimental_active() ) {
 			return new \WP_Error(
 				'smoothgenerator_missing_bookings_experimental',
@@ -730,20 +749,22 @@ class Product extends Generator {
 
 		$product = new \WC_Product_Bookable_Event();
 
-		$image_id = self::get_image();
+		$image_id = ! empty( $assoc_args['no-images'] ) ? 0 : self::get_image();
 
-		$product->set_props( array(
-			'name'               => $name,
-			'featured'           => self::$faker->boolean( 15 ),
-			'catalog_visibility' => 'visible',
-			'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 3 ), true ),
-			'short_description'  => self::$faker->sentence(),
-			'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
-			'regular_price'      => $cost,
-			'image_id'           => $image_id,
-			'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
-			'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
-		) );
+		$product->set_props(
+			array(
+				'name'               => $name,
+				'featured'           => self::$faker->boolean( 15 ),
+				'catalog_visibility' => 'visible',
+				'description'        => self::$faker->paragraphs( self::$faker->numberBetween( 1, 3 ), true ),
+				'short_description'  => self::$faker->sentence(),
+				'sku'                => sanitize_title( $name ) . '-' . self::$faker->ean8,
+				'regular_price'      => $cost,
+				'image_id'           => $image_id,
+				'category_ids'       => self::get_term_ids( 'product_cat', self::$faker->numberBetween( 0, 2 ) ),
+				'tag_ids'            => self::get_term_ids( 'product_tag', self::$faker->numberBetween( 0, 3 ) ),
+			)
+		);
 
 		// Event-specific settings.
 		$product->set_duration_type( 'fixed' );

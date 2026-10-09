@@ -11,10 +11,10 @@
   "scripts": {
     "setup": "npm install && composer install && husky install",
     "build": "composer install --no-dev && npm install --omit=dev && composer archive --file=$npm_package_name --format=zip && rm -rf build && mkdir -p build/$npm_package_name && unzip -q $npm_package_name.zip -d build/$npm_package_name && rm $npm_package_name.zip && cd build && zip -qr ../$npm_package_name.zip $npm_package_name && cd .. && rm -rf build",
-    "phpcs": "composer run phpcs",
-    "lint": "composer run lint",
     "lint:staged": "composer run lint-staged",
-    "lint:branch": "composer run lint-branch"
+    "lint:branch": "composer run lint-branch",
+    "phpcbf": "cd $VAR && $PWD/.config/composer/vendor/squizlabs/php_codesniffer/bin/phpcbf --standard=$INIT_CWD/phpcs.xml --severity=1 --extensions=php,html $INIT_CWD/",
+    "phpcs": "mkdir -p phpcs-results && cd $VAR && $PWD/.config/composer/vendor/squizlabs/php_codesniffer/bin/phpcs --standard=$INIT_CWD/phpcs.xml --severity=1 --report-source --report-xml=$INIT_CWD/phpcs-results/report-$(TZ=\"${PHPCS_TIMEZONE:-Asia/Kolkata}\" date \"+%Y-%m-%dT%H:%M:%S%z\").xml --extensions=php,html $INIT_CWD/"
   },
   "devDependencies": {
     "husky": "^8.0.0"

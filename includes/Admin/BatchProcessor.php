@@ -52,12 +52,14 @@ class BatchProcessor implements BatchProcessorInterface {
 			);
 		}
 
-		$job = new AsyncJob( array(
-			'generator_slug' => $generator_slug,
-			'amount'         => $amount,
-			'args'           => $args,
-			'pending'        => $amount,
-		) );
+		$job = new AsyncJob(
+			array(
+				'generator_slug' => $generator_slug,
+				'amount'         => $amount,
+				'args'           => $args,
+				'pending'        => $amount,
+			)
+		);
 
 		update_option( self::OPTION_KEY, $job, false );
 
