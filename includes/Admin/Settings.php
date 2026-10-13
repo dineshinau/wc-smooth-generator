@@ -112,6 +112,21 @@ class Settings {
 				?>
 			</p>
 
+			<p>
+				<label for="generate_products_no_images">
+					<input
+						id="generate_products_no_images"
+						type="checkbox"
+						name="no_images"
+						value="1"
+						<?php checked( $current_job instanceof AsyncJob && ! empty( $current_job->args['no-images'] ) ); ?>
+						<?php disabled( $current_job instanceof AsyncJob ); ?>
+					/>
+					<?php esc_html_e( 'Skip product images', 'wc-smooth-generator' ); ?>
+				</label>
+				<span class="description"><?php esc_html_e( 'Create products faster without featured, gallery, or variation images.', 'wc-smooth-generator' ); ?></span>
+			</p>
+
 			<h2>Generate orders</h2>
 			<p>
 				<label for="generate_orders_input" class="screen-reader-text">Number of orders to generate</label>
@@ -321,7 +336,8 @@ class Settings {
 
 		if ( ! empty( $_POST['generate_products'] ) && ! empty( $_POST['num_products_to_generate'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
-			$num_to_generate = absint( $_POST['num_products_to_generate'] );
+			$args['no-images'] = ! empty( $_POST['no_images'] );
+			$num_to_generate   = absint( $_POST['num_products_to_generate'] );
 			BatchProcessor::create_new_job( 'products', $num_to_generate, $args );
 		} elseif ( ! empty( $_POST['generate_orders'] ) && ! empty( $_POST['num_orders_to_generate'] ) ) {
 			check_admin_referer( 'generate', 'smoothgenerator_nonce' );
